@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nayab Healthcare Center | Dr. Umair Khan</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font import and application (Inter is the default per instructions) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Softer, light background */
+        }
+        /* Style for mobile-friendly containers */
+        .card-shadow {
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .header-bg-image {
+            background-image: url('https://i.imgur.com/uRj0mD1.jpeg'); /* Your photo URL */
+            background-size: cover;
+            background-position: center 30%; /* Adjust as needed to focus on face */
+            position: relative;
+            padding-top: 10rem; /* Space for text above image */
+            padding-bottom: 3rem; /* Space for text below image */
+            color: white; /* Ensure text is visible over image */
+        }
+        .header-bg-image::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(23, 73, 77, 0.7); /* Dark teal overlay for text readability */
+            z-index: 1;
+        }
+        .header-content {
+            position: relative;
+            z-index: 2;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+        }
+    </style>
+    <!-- Configure Tailwind for Inter font and new theme colors --><script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-teal': '#17494D', /* Deep Teal */
+                        'secondary-gold': '#D4AF37', /* Gold/Bronze accent */
+                        'text-dark': '#343a40', /* Darker text for readability */
+                        'light-bg': '#f0f4f8',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Profile Card --><div class="w-full max-w-4xl bg-white rounded-xl card-shadow overflow-hidden my-8">
+
+        <!-- Header Section with Image --><header class="header-bg-image text-white p-6 md:p-10 text-center">
+            <div class="header-content">
+                <h1 class="text-4xl md:text-5xl font-extrabold mb-1">
+                    Nayab Healthcare Center
+                </h1>
+                <p class="text-xl md:text-2xl font-light">
+                    Dr. Umair Khan
+                </p>
+            </div>
+        </header>
+
+        <!-- Content Body --><main class="p-6 md:p-10 lg:grid lg:grid-cols-3 lg:gap-10">
+            
+            <!-- Left Column: Professional Summary and Roles --><div class="lg:col-span-2 space-y-8">
+                
+                <!-- Introduction --><div>
+                    <h2 class="text-2xl font-bold text-text-dark border-b-2 border-secondary-gold pb-2 mb-4">
+                        A Commitment to Care
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        I am Dr. Umair Khan, dedicated to providing comprehensive and compassionate medical services at Nayab Healthcare Center. As a **Pediatrician** and **General Physician**, I offer a holistic approach to health, focusing on preventative care and effective treatment for all age groups, from newborns to adults.
+                    </p>
+                    <p class="mt-4 text-gray-700 leading-relaxed">
+                        My practice is built on trust, transparency, and clinical excellence. I believe in empowering patients and parents with the knowledge they need to make the best decisions for their health.
+                    </p>
+                </div>
+
+                <!-- Core Services --><div>
+                    <h2 class="text-2xl font-bold text-text-dark border-b-2 border-secondary-gold pb-2 mb-4">
+                        My Areas of Expertise
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Pediatric Care --><div class="bg-primary-teal bg-opacity-10 p-4 rounded-lg border border-primary-teal border-opacity-30">
+                            <div class="text-xl font-semibold text-primary-teal">👶 Pediatric Care</div>
+                            <p class="text-sm text-gray-700 mt-1">
+                                Specialized in infant, child, and adolescent health, including vaccinations, growth monitoring, developmental assessments, and treatment of common childhood illnesses.
+                            </p>
+                        </div>
+                        <!-- General Medicine --><div class="bg-secondary-gold bg-opacity-10 p-4 rounded-lg border border-secondary-gold border-opacity-30">
+                            <div class="text-xl font-semibold text-secondary-gold">🩺 General Medicine</div>
+                            <p class="text-sm text-gray-700 mt-1">
+                                Diagnosis and management of acute and chronic conditions in adults, focusing on preventive health screenings, lifestyle counseling, and ongoing disease management.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Contact & Location --><aside class="lg:col-span-1 mt-8 lg:mt-0 p-6 bg-light-bg rounded-lg border border-gray-200 h-fit">
+                
+                <h3 class="text-xl font-bold text-text-dark mb-4 flex items-center">
+                    <span class="mr-2 text-primary-teal">📍</span> Contact & Location
+                </h3>
+
+                <!-- Clinic Name --><div class="mb-4">
+                    <p class="text-lg font-semibold">Clinic Name:</p>
+                    <p class="text-gray-700">Nayab Healthcare Center</p>
+                </div>
+                
+                <!-- Address --><div class="mb-4">
+                    <p class="text-lg font-semibold">Address:</p>
+                    <p class="text-gray-700">Shamli, [Full Address Details to be added]</p>
+                </div>
+
+                <!-- Mobile Number --><div class="mb-6">
+                    <p class="text-lg font-semibold">Mobile Number:</p>
+                    <a href="tel:9897921409" class="text-primary-teal hover:text-secondary-gold transition duration-150 font-mono text-xl block">
+                        +91 98979 21409
+                    </a>
+                </div>
+
+                <!-- Call to Action Button --><a href="tel:9897921409" class="w-full inline-block text-center py-3 px-4 bg-secondary-gold text-primary-teal font-semibold rounded-lg shadow-md hover:bg-opacity-80 transition duration-200 transform hover:scale-[1.02]">
+                    Call to Book Appointment
+                </a>
+
+                <p class="text-xs text-center text-gray-500 mt-4">
+                    Walk-ins welcome, but appointments are encouraged.
+                </p>
+
+            </aside>
+
+        </main>
+
+        <!-- Footer / Credentials --><footer class="bg-primary-teal text-white text-center p-4">
+            <p class="text-sm">
+                Dr. Umair Khan | Pediatrician & General Physician. Committed to your family's health.
+            </p>
+        </footer>
+    </div>
+
+</body>
+</html>
