@@ -10,20 +10,22 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Softer, light background */
+            background-color: #f8f9fa; /* Very light, clean background */
         }
         /* Style for mobile-friendly containers */
         .card-shadow {
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            /* Simpler shadow for a cleaner look */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
         }
         .header-bg-image {
-            background-image: url('https://github.com/ZKRM25/Umair-khan/blob/main/PHOTO-2025-10-30-22-45-13.jpg'); /* Your photo URL */
+            /* THIS IS WHERE THE IMAGE IS ADDED. */
+            background-image: url('https://i.imgur.com/uRj0mD1.jpeg'); 
             background-size: cover;
             background-position: center 30%; /* Adjust as needed to focus on face */
             position: relative;
-            padding-top: 10rem; /* Space for text above image */
-            padding-bottom: 3rem; /* Space for text below image */
-            color: white; /* Ensure text is visible over image */
+            padding-top: 10rem;
+            padding-bottom: 3rem;
+            color: white;
         }
         .header-bg-image::before {
             content: "";
@@ -32,13 +34,15 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(23, 73, 77, 0.7); /* Dark teal overlay for text readability */
+            /* New blue overlay */
+            background: rgba(0, 123, 255, 0.8); /* Primary Blue overlay for high contrast */
             z-index: 1;
         }
         .header-content {
             position: relative;
             z-index: 2;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            /* Stronger shadow for text over image */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6); 
         }
     </style>
     <!-- Configure Tailwind for Inter font and new theme colors --><script>
@@ -46,14 +50,178 @@
             theme: {
                 extend: {
                     colors: {
-                        'primary-teal': '#17494D', /* Deep Teal */
-                        'secondary-gold': '#D4AF37', /* Gold/Bronze accent */
-                        'text-dark': '#343a40', /* Darker text for readability */
-                        'light-bg': '#f0f4f8',
+                        'primary-blue': '#007bff', /* Classic Health Blue */
+                        'accent-green': '#28a745', /* Action Green */
+                        'soft-text': '#495057', /* Darker text for readability */
+                        'light-bg': '#f8f9fa', /* Very light gray */
                     }
                 }
             }
         }
+    </script>
+    <!-- Firebase Imports for Canvas Environment --><script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Gemini API Configuration
+        const API_KEY = ""; // Provided by the Canvas runtime environment
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+
+        // Initialize Firebase (Required for Canvas)
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous';
+
+        try {
+            setLogLevel('debug');
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Authentication with custom token or anonymously
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+            userId = auth.currentUser?.uid || crypto.randomUUID();
+            console.log("Firebase initialized and user signed in:", userId);
+
+        } catch (error) {
+            console.error("Error initializing Firebase or signing in:", error);
+        }
+
+        // --- GEMINI API LOGIC ---
+
+        const inquiryButton = document.getElementById('inquiryButton');
+        const inquiryInput = document.getElementById('inquiryInput');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const inquiryResult = document.getElementById('inquiryResult');
+        const responseText = document.getElementById('responseText');
+        const responseSources = document.getElementById('responseSources');
+        const buttonText = document.getElementById('buttonText');
+
+        const systemPrompt = `You are a helpful, general health assistant for a medical clinic. Your sole purpose is to provide highly general, non-diagnostic, and reliable information based on external sources. You MUST adhere to these rules: 
+1. The response must be polite and reassuring.
+2. The response must be concise (max 4-5 sentences).
+3. The response should be formatted using Markdown.
+4. At the very end of your response, you MUST include the bolded warning: **This information is for general awareness only and is NOT a substitute for professional medical consultation. Please contact Dr. Umair Khan directly for diagnosis and treatment.**
+5. If the query is obviously a request for a specific diagnosis, politely refuse to diagnose and refer them to the doctor.
+6. Use Google Search grounding to ensure factual accuracy.`;
+
+        async function fetchGeminiResponse(userQuery) {
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            const maxRetries = 3;
+            let delay = 1000;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const text = candidate.content.parts[0].text;
+                        let sources = [];
+                        const groundingMetadata = candidate.groundingMetadata;
+                        
+                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                            sources = groundingMetadata.groundingAttributions
+                                .map(attribution => ({
+                                    uri: attribution.web?.uri,
+                                    title: attribution.web?.title,
+                                }))
+                                .filter(source => source.uri && source.title);
+                        }
+                        
+                        return { text, sources };
+                    } else {
+                        throw new Error("Invalid response structure from Gemini API.");
+                    }
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        console.error("Gemini API request failed after multiple retries:", error);
+                        throw new Error("Sorry, the assistant is currently unavailable. Please try again later.");
+                    }
+                    console.log(`Retrying API call in ${delay / 1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Exponential backoff
+                }
+            }
+        }
+
+        async function handleInquiry() {
+            const query = inquiryInput.value.trim();
+            if (!query) return;
+
+            // UI State: Loading
+            inquiryButton.disabled = true;
+            buttonText.textContent = 'Searching...';
+            loadingIndicator.classList.remove('hidden');
+            inquiryResult.classList.add('hidden');
+            responseText.textContent = '';
+            responseSources.innerHTML = '';
+            
+            try {
+                const result = await fetchGeminiResponse(query);
+                
+                // Convert Markdown to simple HTML paragraphs for display
+                const htmlContent = result.text.split('\n').map(p => p.trim()).filter(p => p.length > 0).join('<br><br>');
+                responseText.innerHTML = htmlContent;
+
+                // Display Sources
+                if (result.sources.length > 0) {
+                    const sourceHtml = '<h5 class="font-semibold mb-1">Sources consulted:</h5>' +
+                        result.sources.slice(0, 3).map((s, index) => 
+                            `<a href="${s.uri}" target="_blank" class="text-xs text-primary-blue hover:underline block">${index + 1}. ${s.title}</a>`
+                        ).join('');
+                    responseSources.innerHTML = sourceHtml;
+                } else {
+                    responseSources.innerHTML = '<p class="text-xs text-gray-500">No specific sources cited for this response.</p>';
+                }
+
+                // UI State: Success
+                inquiryResult.classList.remove('hidden');
+
+            } catch (error) {
+                // UI State: Error
+                responseText.innerHTML = `<span class="text-red-500 font-semibold">${error.message}</span>`;
+                inquiryResult.classList.remove('hidden');
+                responseSources.innerHTML = '';
+            } finally {
+                // UI State: Finished
+                inquiryButton.disabled = false;
+                buttonText.textContent = 'Get General Health Info ✨';
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        inquiryButton.addEventListener('click', handleInquiry);
+
     </script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -71,80 +239,114 @@
             </div>
         </header>
 
-        <!-- Content Body --><main class="p-6 md:p-10 lg:grid lg:grid-cols-3 lg:gap-10">
+        <!-- Content Body. Mobile: 1 column stack; Desktop: 3 columns --><main class="p-6 md:p-10 lg:grid lg:grid-cols-3 lg:gap-10">
             
-            <!-- Left Column: Professional Summary and Roles --><div class="lg:col-span-2 space-y-8">
+            <!-- Left Column: Professional Summary, Roles, and LLM Feature (2/3 width on desktop) --><div class="lg:col-span-2 space-y-8">
                 
                 <!-- Introduction --><div>
-                    <h2 class="text-2xl font-bold text-text-dark border-b-2 border-secondary-gold pb-2 mb-4">
+                    <h2 class="text-2xl font-bold text-primary-blue border-b-2 border-primary-blue pb-2 mb-4">
                         A Commitment to Care
                     </h2>
-                    <p class="text-gray-700 leading-relaxed">
+                    <p class="text-soft-text leading-relaxed text-base md:text-lg">
                         I am Dr. Umair Khan, dedicated to providing comprehensive and compassionate medical services at Nayab Healthcare Center. As a **Pediatrician** and **General Physician**, I offer a holistic approach to health, focusing on preventative care and effective treatment for all age groups, from newborns to adults.
                     </p>
-                    <p class="mt-4 text-gray-700 leading-relaxed">
+                    <p class="mt-4 text-soft-text leading-relaxed text-base md:text-lg">
                         My practice is built on trust, transparency, and clinical excellence. I believe in empowering patients and parents with the knowledge they need to make the best decisions for their health.
                     </p>
                 </div>
 
                 <!-- Core Services --><div>
-                    <h2 class="text-2xl font-bold text-text-dark border-b-2 border-secondary-gold pb-2 mb-4">
+                    <h2 class="text-2xl font-bold text-soft-text border-b-2 border-accent-green pb-2 mb-4">
                         My Areas of Expertise
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Pediatric Care --><div class="bg-primary-teal bg-opacity-10 p-4 rounded-lg border border-primary-teal border-opacity-30">
-                            <div class="text-xl font-semibold text-primary-teal">👶 Pediatric Care</div>
-                            <p class="text-sm text-gray-700 mt-1">
+                        <!-- Pediatric Care --><div class="bg-primary-blue/10 p-4 rounded-lg border border-primary-blue/30 transition hover:shadow-md">
+                            <div class="text-xl font-semibold text-primary-blue flex items-center">
+                                👶 Pediatric Care
+                            </div>
+                            <p class="text-sm text-soft-text mt-2">
                                 Specialized in infant, child, and adolescent health, including vaccinations, growth monitoring, developmental assessments, and treatment of common childhood illnesses.
                             </p>
                         </div>
-                        <!-- General Medicine --><div class="bg-secondary-gold bg-opacity-10 p-4 rounded-lg border border-secondary-gold border-opacity-30">
-                            <div class="text-xl font-semibold text-secondary-gold">🩺 General Medicine</div>
-                            <p class="text-sm text-gray-700 mt-1">
+                        <!-- General Medicine --><div class="bg-accent-green/10 p-4 rounded-lg border border-accent-green/30 transition hover:shadow-md">
+                            <div class="text-xl font-semibold text-accent-green flex items-center">
+                                🩺 General Medicine
+                            </div>
+                            <p class="text-sm text-soft-text mt-2">
                                 Diagnosis and management of acute and chronic conditions in adults, focusing on preventive health screenings, lifestyle counseling, and ongoing disease management.
                             </p>
                         </div>
                     </div>
                 </div>
+                
+                <!-- New LLM Feature Section --><div class="p-6 bg-light-bg rounded-xl border border-primary-blue/20">
+                    <h2 class="text-2xl font-bold text-primary-blue pb-2 mb-4 flex items-center">
+                        <span class="mr-2">✨</span> Health Inquiry Assistant
+                    </h2>
+                    <p class="text-soft-text mb-4 text-base">
+                        Enter a common symptom or health question (e.g., "what to do for a fever in a child?") to get general, reliable information.
+                        <strong class="text-red-600">This is NOT medical advice. Always consult Dr. Khan for diagnosis and treatment.</strong>
+                    </p>
+
+                    <textarea id="inquiryInput" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue transition resize-none text-sm" placeholder="Ask your general health question here..."></textarea>
+                    
+                    <button id="inquiryButton" class="w-full mt-3 py-3 px-4 bg-primary-blue text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition duration-200 flex items-center justify-center">
+                        <span id="buttonText">Get General Health Info ✨</span>
+                    </button>
+                    
+                    <div id="loadingIndicator" class="mt-4 hidden text-center text-primary-blue">
+                        <svg class="animate-spin h-5 w-5 mr-3 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Searching reliable sources...
+                    </div>
+
+                    <div id="inquiryResult" class="mt-4 p-4 border border-gray-200 rounded-lg bg-white hidden">
+                        <h4 class="font-bold text-primary-blue mb-2">Assistant Response:</h4>
+                        <p id="responseText" class="text-soft-text leading-relaxed text-sm"></p>
+                        <div id="responseSources" class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500"></div>
+                    </div>
+                </div>
 
             </div>
 
-            <!-- Right Column: Contact & Location --><aside class="lg:col-span-1 mt-8 lg:mt-0 p-6 bg-light-bg rounded-lg border border-gray-200 h-fit">
+            <!-- Right Column: Contact & Location (1/3 width on desktop) --><aside class="lg:col-span-1 mt-8 lg:mt-0 p-6 bg-light-bg rounded-xl border-2 border-primary-blue/10 h-fit sticky top-4">
                 
-                <h3 class="text-xl font-bold text-text-dark mb-4 flex items-center">
-                    <span class="mr-2 text-primary-teal">📍</span> Contact & Location
+                <h3 class="text-2xl font-bold text-soft-text mb-4 flex items-center">
+                    <span class="mr-2 text-primary-blue">📍</span> Contact & Location
                 </h3>
 
                 <!-- Clinic Name --><div class="mb-4">
-                    <p class="text-lg font-semibold">Clinic Name:</p>
-                    <p class="text-gray-700">Nayab Healthcare Center</p>
+                    <p class="text-lg font-semibold text-primary-blue">Clinic Name:</p>
+                    <p class="text-soft-text text-lg">Nayab Healthcare Center</p>
                 </div>
                 
                 <!-- Address --><div class="mb-4">
-                    <p class="text-lg font-semibold">Address:</p>
-                    <p class="text-gray-700">Shamli, [Full Address Details to be added]</p>
+                    <p class="text-lg font-semibold text-primary-blue">Address:</p>
+                    <p class="text-soft-text text-lg">Shamli, [Full Address Details to be added]</p>
                 </div>
 
                 <!-- Mobile Number --><div class="mb-6">
-                    <p class="text-lg font-semibold">Mobile Number:</p>
-                    <a href="tel:9897921409" class="text-primary-teal hover:text-secondary-gold transition duration-150 font-mono text-xl block">
+                    <p class="text-lg font-semibold text-primary-blue">Mobile Number:</p>
+                    <a href="tel:9897921409" class="text-accent-green hover:text-primary-blue transition duration-150 font-mono text-2xl block font-extrabold">
                         +91 98979 21409
                     </a>
                 </div>
 
-                <!-- Call to Action Button --><a href="tel:9897921409" class="w-full inline-block text-center py-3 px-4 bg-secondary-gold text-primary-teal font-semibold rounded-lg shadow-md hover:bg-opacity-80 transition duration-200 transform hover:scale-[1.02]">
-                    Call to Book Appointment
+                <!-- Call to Action Button --><a href="tel:9897921409" class="w-full inline-block text-center py-4 px-4 bg-accent-green text-white font-bold rounded-lg shadow-lg hover:bg-green-600 transition duration-200 transform hover:scale-[1.03] text-lg">
+                    Call to Book Appointment Now
                 </a>
 
-                <p class="text-xs text-center text-gray-500 mt-4">
-                    Walk-ins welcome, but appointments are encouraged.
+                <p class="text-sm text-center text-gray-500 mt-4">
+                    Walk-ins welcome. Please call ahead for appointments.
                 </p>
 
             </aside>
 
         </main>
 
-        <!-- Footer / Credentials --><footer class="bg-primary-teal text-white text-center p-4">
+        <!-- Footer / Credentials --><footer class="bg-primary-blue text-white text-center p-4 rounded-b-xl">
             <p class="text-sm">
                 Dr. Umair Khan | Pediatrician & General Physician. Committed to your family's health.
             </p>
@@ -153,4 +355,3 @@
 
 </body>
 </html>
-
